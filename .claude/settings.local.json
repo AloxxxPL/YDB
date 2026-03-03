@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(which npx && npx --version 2>/dev/null)",
+      "Bash(echo \"YDB\" | npx create-expo-app@latest . --template blank-typescript 2>&1)"
+    ]
+  }
+}
