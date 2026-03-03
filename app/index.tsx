@@ -2,8 +2,8 @@ import { Text, View } from 'react-native';
 
 export default function Index() {
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>YDB — działa!</Text>
+    <View className="flex-1 justify-center items-center bg-white">
+      <Text className="text-2xl font-bold text-blue-600">YDB — NativeWind działa!</Text>
     </View>
   );
 }
