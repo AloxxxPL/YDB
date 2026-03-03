@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(which npx && npx --version 2>/dev/null)",
-      "Bash(echo \"YDB\" | npx create-expo-app@latest . --template blank-typescript 2>&1)"
+      "Bash(echo \"YDB\" | npx create-expo-app@latest . --template blank-typescript 2>&1)",
+      "Bash(git -C /home/aloxxx/Workspace/YDB log --oneline)",
+      "Bash(npx expo install expo-router react-native-safe-area-context react-native-screens react-native-gesture-handler expo-constants expo-linking expo-status-bar 2>&1)",
+      "Bash(git add . && git commit -m \"feat: add expo-router with root layout and index screen\")"
     ]
   }
 }
