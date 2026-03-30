@@ -20,6 +20,13 @@ export default function RootLayout() {
         <Stack.Screen name="diet" options={{ headerShown: false }} />
         <Stack.Screen name="journey" options={{ headerShown: false }} />
         <Stack.Screen name="profile" options={{ headerShown: false }} />
+        {/* Formularze onboardingu — zbierają dane użytkownika przed pierwszym wejściem do aplikacji */}
+        <Stack.Screen name="forms/name" options={{ headerShown: false }} />
+        <Stack.Screen name="forms/gender" options={{ headerShown: false }} />
+        <Stack.Screen name="forms/age" options={{ headerShown: false }} />
+        <Stack.Screen name="forms/height" options={{ headerShown: false }} />
+        <Stack.Screen name="forms/weight" options={{ headerShown: false }} />
+        <Stack.Screen name="forms/goal" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </QueryClientProvider>
