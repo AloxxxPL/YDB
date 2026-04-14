@@ -11,7 +11,7 @@ const GOALS = [
 
 export default function GoalPage() {
   const router = useRouter();
-  const setFormsCompleted = useAppStore((s) => s.setFormsCompleted);
+  const updateTempProfile = useAppStore((s) => s.updateTempProfile);
   const [selected, setSelected] = useState<string[]>([]);
 
   function toggle(goal: string) {
@@ -21,8 +21,21 @@ export default function GoalPage() {
   }
 
   function confirm() {
-    setFormsCompleted(true);
-    router.replace('/');
+    if (selected.length === 0) return;
+
+    // Mapuj cele na typy
+    const goalMap: Record<string, 'lose' | 'muscle' | 'healthy'> = {
+      'Drop few pounds': 'lose',
+      'Gain muscle tissue': 'muscle',
+      'Create healthier habits': 'healthy',
+    };
+    const goals = selected.map((s) => goalMap[s]).filter(Boolean) as ('lose' | 'muscle' | 'healthy')[];
+
+    // Zapisz do tempProfile w Zustand
+    updateTempProfile({ goal: goals });
+
+    // Redirect do formularza dań
+    router.push('/forms/dishes');
   }
 
   return (

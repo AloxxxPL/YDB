@@ -1,7 +1,10 @@
 import '../global.css';
+import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useAppStore } from '../store/app';
+import { supabase } from '../services/supabase';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -13,6 +16,24 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
+  useEffect(() => {
+    const bootstrap = async () => {
+      const state = useAppStore.getState();
+      const { userId, profile } = state;
+
+      // Jeśli profil już istnieje w Zustand (z persist) → dashboard
+      if (userId && profile) {
+        useAppStore.getState().setFormsCompleted(true);
+        return;
+      }
+
+      // Brak profilu → pokaż formularze
+      useAppStore.getState().setFormsCompleted(false);
+    };
+
+    bootstrap();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Stack>
@@ -27,6 +48,7 @@ export default function RootLayout() {
         <Stack.Screen name="forms/height" options={{ headerShown: false }} />
         <Stack.Screen name="forms/weight" options={{ headerShown: false }} />
         <Stack.Screen name="forms/goal" options={{ headerShown: false }} />
+        <Stack.Screen name="forms/dishes" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </QueryClientProvider>

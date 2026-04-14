@@ -26,22 +26,68 @@
 - `app/diet.tsx` — pusta strona Diety (Stack screen, ma back button)
 
 ## Formularze onboardingu (app/forms/)
-Zbierają dane użytkownika przed pierwszym wejściem do aplikacji.
-Przepływ: `name → gender → age → height → weight → goal → /` (home)
+Zbierają dane użytkownika w Zustand przed zapisaniem do Supabase.
+Przepływ: `name → gender → age → height → weight → goal → dishes → Supabase → /` (home)
 
-- `app/forms/name.tsx` — TextInput na imię; przycisk Continue aktywny gdy pole niepuste
-- `app/forms/gender.tsx` — dwa przyciski Male / Female; tap auto-przechodzi do age
-- `app/forms/age.tsx` — TextInput numeric (lata); przycisk Continue
-- `app/forms/height.tsx` — TextInput numeric (cm); przycisk Continue
-- `app/forms/weight.tsx` — TextInput numeric (kg); przycisk Continue
-- `app/forms/goal.tsx` — trzy opcje (Drop few pounds / Gain muscle tissue / Create healthier habits);
-  tap ustawia `formsCompleted = true` w Zustand i robi `router.replace('/')`
+**Integracja z Zustand (tempProfile):**
+- `app/forms/name.tsx` — przechowuje data.name w Zustand (`updateTempProfile`)
+- `app/forms/gender.tsx` — przechowuje data.gender
+- `app/forms/age.tsx` — przechowuje data.age (konwertuje na int)
+- `app/forms/height.tsx` — przechowuje data.height_cm
+- `app/forms/weight.tsx` — przechowuje data.weight_kg
+- `app/forms/goal.tsx` — przechowuje data.goal, redirectuje do dishes
+- `app/forms/dishes.tsx` — formularz do dodawania ulubionych dań (max 10):
+  - ScrollView z listą kafelków - każdy ma [EDIT] i [REMOVE] buttony
+  - Input + mały button do dodawania/edytowania dań
+  - Button "Start" na dole wysyła wszystkie dane do Supabase
+  - Wystarczy 1 danie by zakończyć formularz
+  - Ustawia `formsCompleted = true` i `userId`, redirectuje do home
 
-## Stan onboardingu (store/app.ts)
-- `formsCompleted: boolean` — flaga czy użytkownik przeszedł formularze
-- `setFormsCompleted(boolean)` — setter
-- Tymczasowo in-memory (gubi się przy restarcie)
-- TODO: zastąpić sprawdzeniem profilu w Supabase (patrz `docs/supabase-architecture.md`)
+## Stan aplikacji — Zustand z persist
+`store/app.ts` używa middleware `persist` z AsyncStorage:
+- **token** — JWT lub identyfikator sesji (null dla temp users)
+- **userId** — identyfikator użytkownika (temp UUID dla onboarding bez auth)
+- **profile** — pełny profil z Supabase (Profile type)
+- **tempProfile** — dane w trakcie formularzy (TempProfile type; rodzielone od profile)
+- **formsCompleted** — czy formularze ukończone
+- Wszystkie dane persisted → AsyncStorage → dostępne po restarcie aplikacji
+
+## Bootstrap logika (app/_layout.tsx)
+Na starcie aplikacji w `useEffect`:
+1. Czyta token z AsyncStorage (via Zustand persist)
+2. Jeśli brak tokena → `formsCompleted = false` (pokaż formularze)
+3. Jeśli token istnieje → weryfikuj na Supabase (`auth.getSession()`)
+4. Jeśli token invalid → wyloguj (clear token/profile)
+5. Jeśli token valid → załaduj profil z `profiles` table → hydrate Zustand
+6. Jeśli profil nie istnieje → `formsCompleted = false` (pokaż formularze)
+
+## Zapisywanie profilu (app/forms/dishes.tsx)
+Po dodaniu min. 1 dania i kliknięciu "Start":
+1. Generuj temp UUID (`temp-{timestamp}-{random}`)
+2. Przeanalizuj tempProfile z Zustand (name, gender, age, height_cm, weight_kg, goal, dishes)
+3. Mapuj wybrany cel na typ ('lose' / 'muscle' / 'healthy')
+4. Buduj obiekт Profile z wszystkimi polami
+5. Wyślij `INSERT` do Supabase `profiles` table
+6. Jeśli sukces → ustaw w Zustand (userId, profile, formsCompleted = true)
+7. Redirect do `/` (home) — dashboard bez formularzy
+
+## Restart aplikacji → Dashboard bez formularzy
+1. Bootstrap ładuje AsyncStorage (persist)
+2. Znajduje userId i token w Zustand
+3. Weryfikuje profil na Supabase
+4. Ustawia `formsCompleted = true`
+5. `index.tsx` widzi flaga → `<Redirect href="/forms/name" />` nie pojawia się
+6. Pokaż home/dashboard bezpośrednio
+
+## Pakiety i konfiguracja
+- `@supabase/supabase-js` — klient Supabase (services/supabase.ts)
+- `@react-native-async-storage/async-storage` — pamięć na telefonie (mittorenie Zustand)
+- `expo-secure-store` — bezpieczne przechowywanie sensitywnych danych
+- `.env`: `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+
+## Typy
+- `types/supabase.ts` — `Profile` (id, name, gender, age, height_cm, weight_kg, goal, created_at)
+- `types/index.ts` — `TempProfile` (opcjonalne pola), `AppStore` (Zustand interface)
 
 ## Redirect w Expo Router — ważna pułapka
 

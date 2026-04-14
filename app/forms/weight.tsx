@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { View, Text, TextInput, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAppStore } from '../../store/app';
 
 export default function WeightPage() {
   const router = useRouter();
-  const [weight, setWeight] = useState('');
+  const updateTempProfile = useAppStore((s) => s.updateTempProfile);
+  const savedWeight = useAppStore((s) => s.tempProfile.weight_kg?.toString() || '');
+  const [weight, setWeight] = useState(savedWeight);
   const canContinue = weight.trim().length > 0;
 
   return (
@@ -19,7 +22,10 @@ export default function WeightPage() {
         autoFocus
       />
       <Pressable
-        onPress={() => router.push('/forms/goal')}
+        onPress={() => {
+          updateTempProfile({ weight_kg: parseFloat(weight) });
+          router.push('/forms/goal');
+        }}
         disabled={!canContinue}
         className={`border-2 border-black rounded-xl p-4 items-center ${!canContinue ? 'opacity-30' : ''}`}
       >

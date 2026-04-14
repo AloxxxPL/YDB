@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { View, Text, TextInput, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAppStore } from '../../store/app';
 
 export default function AgePage() {
   const router = useRouter();
-  const [age, setAge] = useState('');
+  const updateTempProfile = useAppStore((s) => s.updateTempProfile);
+  const savedAge = useAppStore((s) => s.tempProfile.age?.toString() || '');
+  const [age, setAge] = useState(savedAge);
   const canContinue = age.trim().length > 0;
 
   return (
@@ -19,7 +22,10 @@ export default function AgePage() {
         autoFocus
       />
       <Pressable
-        onPress={() => router.push('/forms/height')}
+        onPress={() => {
+          updateTempProfile({ age: parseInt(age, 10) });
+          router.push('/forms/height');
+        }}
         disabled={!canContinue}
         className={`border-2 border-black rounded-xl p-4 items-center ${!canContinue ? 'opacity-30' : ''}`}
       >

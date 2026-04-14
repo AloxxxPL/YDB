@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { View, Text, TextInput, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAppStore } from '../../store/app';
 
 export default function HeightPage() {
   const router = useRouter();
-  const [height, setHeight] = useState('');
+  const updateTempProfile = useAppStore((s) => s.updateTempProfile);
+  const savedHeight = useAppStore((s) => s.tempProfile.height_cm?.toString() || '');
+  const [height, setHeight] = useState(savedHeight);
   const canContinue = height.trim().length > 0;
 
   return (
@@ -19,7 +22,10 @@ export default function HeightPage() {
         autoFocus
       />
       <Pressable
-        onPress={() => router.push('/forms/weight')}
+        onPress={() => {
+          updateTempProfile({ height_cm: parseInt(height, 10) });
+          router.push('/forms/weight');
+        }}
         disabled={!canContinue}
         className={`border-2 border-black rounded-xl p-4 items-center ${!canContinue ? 'opacity-30' : ''}`}
       >
