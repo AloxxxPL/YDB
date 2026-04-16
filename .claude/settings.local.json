@@ -74,7 +74,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(claude auth:*)"
+      "Bash(claude auth:*)",
+      "Bash(gh repo *)",
+      "Bash(gh issue *)"
     ]
   }
 }

@@ -1,0 +1,1 @@
+1. niedziałający system sprawdzania języku systemowego urządzenia użytkownika.
