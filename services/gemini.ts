@@ -1,9 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Requires EXPO_PUBLIC_GEMINI_API_KEY in .env (rename from GEMINI_API_KEY)
-// Only EXPO_PUBLIC_* vars are exposed to the Expo client bundle.
 const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '';
-
 const genAI = new GoogleGenerativeAI(apiKey);
 
-export const geminiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+export const geminiModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });

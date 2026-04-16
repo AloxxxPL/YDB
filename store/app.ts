@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { AppStore, TempProfile } from '../types';
+import type { AppStore, TempProfile, DietPlan } from '../types';
 
 export const useAppStore = create<AppStore>()(
   persist(
@@ -31,6 +31,18 @@ export const useAppStore = create<AppStore>()(
       // Flaga czy formularze zostały wypełnione
       formsCompleted: false,
       setFormsCompleted: (completed) => set({ formsCompleted: completed }),
+
+      // Plan diety — wygenerowany przez Gemini
+      dietPlan: null,
+      setDietPlan: (plan) => set({ dietPlan: plan }),
+
+      // Stan generowania diety
+      dietLoading: false,
+      setDietLoading: (loading) => set({ dietLoading: loading }),
+
+      // Błędy diety
+      dietError: null,
+      setDietError: (error) => set({ dietError: error }),
     }),
     {
       name: 'app-store', // key w AsyncStorage

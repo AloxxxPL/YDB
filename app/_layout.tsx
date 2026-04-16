@@ -17,21 +17,24 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   useEffect(() => {
-    const bootstrap = async () => {
-      const state = useAppStore.getState();
-      const { userId, profile } = state;
+    const bootstrap = () => {
+      const { userId, profile } = useAppStore.getState();
 
-      // Jeśli profil już istnieje w Zustand (z persist) → dashboard
       if (userId && profile) {
         useAppStore.getState().setFormsCompleted(true);
-        return;
+      } else {
+        useAppStore.getState().setFormsCompleted(false);
       }
-
-      // Brak profilu → pokaż formularze
-      useAppStore.getState().setFormsCompleted(false);
     };
 
-    bootstrap();
+    // Jeśli AsyncStorage już zrehydrował store → odpal od razu
+    if (useAppStore.persist.hasHydrated()) {
+      bootstrap();
+    } else {
+      // Poczekaj na zakończenie rehydratacji przed odczytem danych
+      const unsub = useAppStore.persist.onFinishHydration(bootstrap);
+      return unsub;
+    }
   }, []);
 
   return (
@@ -41,6 +44,8 @@ export default function RootLayout() {
         <Stack.Screen name="diet" options={{ headerShown: false }} />
         <Stack.Screen name="journey" options={{ headerShown: false }} />
         <Stack.Screen name="profile" options={{ headerShown: false }} />
+        <Stack.Screen name="chat" options={{ headerShown: false }} />
+        <Stack.Screen name="settings" options={{ headerShown: false }} />
         {/* Formularze onboardingu — zbierają dane użytkownika przed pierwszym wejściem do aplikacji */}
         <Stack.Screen name="forms/name" options={{ headerShown: false }} />
         <Stack.Screen name="forms/gender" options={{ headerShown: false }} />

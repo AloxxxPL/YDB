@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '../../store/app';
 import { supabase } from '../../services/supabase';
+import { generateDietPlan } from '../../services/diet';
 
 export default function DishesPage() {
 const router = useRouter();
@@ -11,47 +12,49 @@ const updateTempProfile = useAppStore((s) => s.updateTempProfile);
 const setProfile = useAppStore((s) => s.setProfile);
 const setFormsCompleted = useAppStore((s) => s.setFormsCompleted);
 const setUserId = useAppStore((s) => s.setUserId);
+const setDietPlan = useAppStore((s) => s.setDietPlan);
+const setDietLoading = useAppStore((s) => s.setDietLoading);
+const setDietError = useAppStore((s) => s.setDietError);
 
 const [input, setInput] = useState('');
 const [dishes, setDishes] = useState<string[]>(tempProfile.dishes || []);
 const [editingIndex, setEditingIndex] = useState<number | null>(null);
-const [editInput, setEditInput] = useState('');
+const editingRef = useRef<number | null>(null);
 const [isLoading, setIsLoading] = useState(false);
+
+function startEdit(index: number) {
+    editingRef.current = index;
+    setEditingIndex(index);
+    setInput(dishes[index]);
+}
 
 function addDish() {
     const trimmed = input.trim();
     if (trimmed.length === 0) return;
 
-    if (editingIndex !== null) {
-    // Edycja
-    const newDishes = [...dishes];
-    newDishes[editingIndex] = trimmed;
-    setDishes(newDishes);
+    const idx = editingRef.current;
+    if (idx !== null) {
+    setDishes(prev => { const d = [...prev]; d[idx] = trimmed; return d; });
+    editingRef.current = null;
     setEditingIndex(null);
-    setEditInput('');
-    } else {
-    // Dodaj nowe
-    if (dishes.length >= 10) {
-        Alert.alert('Limit', 'Maximum 10 dishes allowed');
-        return;
-    }
-    setDishes([...dishes, trimmed]);
+    setInput('');
+    return;
     }
 
+    if (dishes.length >= 10) {
+    Alert.alert('Limit', 'Maximum 10 dishes allowed');
+    return;
+    }
+    setDishes(prev => [...prev, trimmed]);
     setInput('');
 }
 
 function removeDish(index: number) {
-    setDishes(dishes.filter((_, i) => i !== index));
-    if (editingIndex === index) {
+    setDishes(prev => prev.filter((_, i) => i !== index));
+    if (editingRef.current === index) {
+    editingRef.current = null;
     setEditingIndex(null);
-    setEditInput('');
     }
-}
-
-function startEdit(index: number) {
-    setEditInput(dishes[index]);
-    setInput(dishes[index]);
 }
 
 async function confirm() {
@@ -97,8 +100,23 @@ async function confirm() {
     setUserId(tempUserId);
     setProfile(profileData as any);
     setFormsCompleted(true);
+    setDietLoading(true);
+    setDietError(null);
 
-    // Redirect do home
+    // Generowanie w tle — redirect następuje natychmiast,
+    // loading screen widoczny w /diet podczas oczekiwania
+    generateDietPlan(profileData as any)
+      .then((plan) => {
+        setDietPlan(plan);
+        setDietError(null);
+      })
+      .catch((err: Error) => {
+        setDietError(err.message || 'Failed to generate diet plan');
+      })
+      .finally(() => {
+        setDietLoading(false);
+      });
+
     router.replace('/');
     } catch (err: any) {
     Alert.alert('Error', err.message || 'Unknown error');
@@ -149,11 +167,13 @@ return (
         />
         <Pressable
         onPress={addDish}
-        disabled={input.trim().length === 0 || isLoading || dishes.length >= 10}
-        className="border-2 border-black rounded-xl px-4 py-4 items-center justify-center"
+        disabled={input.trim().length === 0 || isLoading || (editingIndex === null && dishes.length >= 10)}
+        className={`border-2 border-black rounded-xl px-4 py-4 items-center justify-center ${
+            input.trim().length === 0 || isLoading ? 'opacity-30' : ''
+        }`}
         >
         <Text className="font-semibold text-sm">
-            SUBMIT
+            {editingIndex !== null ? 'UPDATE' : 'ADD'}
         </Text>
         </Pressable>
     </View>
