@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { AppStore, TempProfile, DietPlan } from '../types';
+import type { AppStore, ChatMessage } from '../types';
 
 export const useAppStore = create<AppStore>()(
   persist(
@@ -43,6 +43,14 @@ export const useAppStore = create<AppStore>()(
       // Błędy diety
       dietError: null,
       setDietError: (error) => set({ dietError: error }),
+
+      // Historia chatów
+      chatMessages: [],
+      setChatMessages: (chatMessages) => set({ chatMessages }),
+      addChatMessage: (message) =>
+        set((state) => ({
+          chatMessages: [...state.chatMessages, message],
+        })),
     }),
     {
       name: 'app-store', // key w AsyncStorage

@@ -1,14 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, Pressable, FlatList, ActivityIndicator, KeyboardAvoidingView, ScrollView } from 'react-native';
 import { geminiModel } from '../services/gemini';
+import { useAppStore } from '../store/app';
+import type { ChatMessage } from '../types';
 
-type Message = {
-id: string;
-role: 'user' | 'assistant';
-text: string;
-};
-
-const SYSTEM_PROMPT = `You are a friendly and knowledgeable nutrition assistant. Help users with:
+const getSystemPrompt = (profile: any): string => {
+if (!profile) {
+    return `You are a friendly and knowledgeable nutrition assistant. Help users with:
 - Diet advice and healthy eating tips
 - Recipe suggestions
 - Nutritional information
@@ -16,15 +14,40 @@ const SYSTEM_PROMPT = `You are a friendly and knowledgeable nutrition assistant.
 - Motivation and support for their fitness goals
 
 Keep responses concise and practical. Be encouraging and supportive.`;
+}
+
+return `You are a friendly and knowledgeable nutrition assistant for ${profile.name}.
+
+User Profile:
+- Age: ${profile.age}, Gender: ${profile.gender}
+- Height: ${profile.height_cm}cm, Weight: ${profile.weight_kg}kg
+- Goals: ${profile.goal.join(', ')}
+- Favorite dishes: ${profile.dishes.join(', ')}
+
+Help them with:
+- Diet advice and healthy eating tips tailored to their goals
+- Recipe suggestions using their favorite ingredients
+- Nutritional information relevant to their metrics
+- Healthy habits and lifestyle tips
+- Motivation and support for their fitness goals
+
+Keep responses concise and practical. Be encouraging and supportive. Reference their goals and preferences when relevant.`;
+};
 
 export default function ChatScreen() {
-const [messages, setMessages] = useState<Message[]>([
-    {
-    id: '0',
-    role: 'assistant',
-    text: "Hi! I'm your nutrition assistant. Ask me anything about healthy eating, recipes, or fitness habits!",
-    },
-]);
+const profile = useAppStore((s) => s.profile);
+const storedMessages = useAppStore((s) => s.chatMessages);
+const addChatMessage = useAppStore((s) => s.addChatMessage);
+
+const initialMessages: ChatMessage[] = storedMessages.length > 0
+    ? storedMessages
+    : [{
+        id: '0',
+        role: 'assistant',
+        text: "Hi! I'm your nutrition assistant. Ask me anything about healthy eating, recipes, or fitness habits!",
+    }];
+
+const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
 const [input, setInput] = useState('');
 const [isLoading, setIsLoading] = useState(false);
 const scrollViewRef = useRef<ScrollView>(null);
@@ -36,13 +59,14 @@ useEffect(() => {
 async function sendMessage() {
     if (!input.trim()) return;
 
-    const userMessage: Message = {
+    const userMessage: ChatMessage = {
     id: Date.now().toString(),
     role: 'user',
     text: input.trim(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    addChatMessage(userMessage);
     setInput('');
     setIsLoading(true);
 
@@ -51,7 +75,9 @@ async function sendMessage() {
         .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.text}`)
         .join('\n');
 
-    const prompt = `${SYSTEM_PROMPT}
+    const systemPrompt = getSystemPrompt(profile);
+
+    const prompt = `${systemPrompt}
 
 Previous conversation:
 ${conversationHistory}
@@ -63,20 +89,22 @@ Respond helpfully and concisely.`;
     const result = await geminiModel.generateContent(prompt);
     const assistantText = result.response.text();
 
-    const assistantMessage: Message = {
+    const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         text: assistantText,
     };
 
     setMessages((prev) => [...prev, assistantMessage]);
+    addChatMessage(assistantMessage);
     } catch (error: any) {
-    const errorMessage: Message = {
+    const errorMessage: ChatMessage = {
         id: (Date.now() + 2).toString(),
         role: 'assistant',
         text: "Sorry, I couldn't process that. Please try again.",
     };
     setMessages((prev) => [...prev, errorMessage]);
+    addChatMessage(errorMessage);
     console.error('Chat error:', error);
     } finally {
     setIsLoading(false);
@@ -85,14 +113,15 @@ Respond helpfully and concisely.`;
 
 return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-white"
+    behavior="padding"
+    className="flex-1 bg-white"
     >
-      <ScrollView
+    <ScrollView
         ref={scrollViewRef}
         className="flex-1 px-4 py-4"
         showsVerticalScrollIndicator={false}
-      >
+        keyboardShouldPersistTaps="handled"
+    >
         {messages.map((msg) => (
         <View
             key={msg.id}
@@ -125,10 +154,10 @@ return (
         )}
     </ScrollView>
 
-    {/* Input area */}
-    <View className="border-t-2 border-black px-4 py-4 flex-row gap-2">
+    <View className="border-t-2 border-black px-4 py-3 flex-row gap-2 bg-white">
         <TextInput
-        className="flex-1 border-2 border-black rounded-lg px-4 py-10 text-base"
+        className="flex-1 border-2 border-black rounded-lg px-3 text-base"
+        style={{ height: 48, textAlignVertical: 'center' }}
         placeholder="Ask me about nutrition..."
         value={input}
         onChangeText={setInput}
@@ -137,7 +166,7 @@ return (
         <Pressable
         onPress={sendMessage}
         disabled={!input.trim() || isLoading}
-        className={`border-2 border-black rounded-lg px-4 py-3 items-center justify-center ${
+        className={`border-2 border-black rounded-lg px-4 py-2 items-center justify-center ${
             !input.trim() || isLoading ? 'opacity-30' : ''
         }`}
         >

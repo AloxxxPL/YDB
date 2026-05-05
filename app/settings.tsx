@@ -10,6 +10,7 @@ export default function SettingsScreen() {
   const setFormsCompleted = useAppStore((s) => s.setFormsCompleted);
   const setDietPlan = useAppStore((s) => s.setDietPlan);
   const setTempProfile = useAppStore((s) => s.setTempProfile);
+  const setChatMessages = useAppStore((s) => s.setChatMessages);
 
   function logout() {
     Alert.alert('Logout', 'Are you sure?', [
@@ -23,6 +24,7 @@ export default function SettingsScreen() {
           setFormsCompleted(false);
           setDietPlan(null);
           setTempProfile({});
+          setChatMessages([]);
           router.replace('/forms/name');
         },
       },

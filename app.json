@@ -15,7 +15,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundColor": "#ffffff"
-      }
+      },
     },
     "web": {
       "bundler": "metro",

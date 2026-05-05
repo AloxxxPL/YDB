@@ -25,6 +25,13 @@ export type DietPlan = {
   notes: string;
 };
 
+// Wiadomość w chacie
+export type ChatMessage = {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+};
+
 // Globalne typy aplikacji
 export type AppStore = {
   isReady: boolean;
@@ -61,4 +68,9 @@ export type AppStore = {
   // Błędy diety
   dietError: string | null;
   setDietError: (error: string | null) => void;
+
+  // Historia chatów (persisted w AsyncStorage)
+  chatMessages: ChatMessage[];
+  setChatMessages: (messages: ChatMessage[]) => void;
+  addChatMessage: (message: ChatMessage) => void;
 };
